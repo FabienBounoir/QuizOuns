@@ -234,15 +234,13 @@
 					{/each}
 				</div>
 
-				{#if !isAnswered(currentQuestionIndex)}
-					<div class="answer-hint">
-						{#if currentQuestion.type === 'single'}
-							💡 Sélectionnez une réponse pour continuer
-						{:else}
-							💡 Sélectionnez une ou plusieurs réponses pour continuer
-						{/if}
-					</div>
-				{/if}
+				<div class="answer-hint">
+					{#if currentQuestion.type === 'single'}
+						💡 Sélectionnez une réponse pour continuer
+					{:else}
+						💡 Sélectionnez une ou plusieurs réponses pour continuer
+					{/if}
+				</div>
 			</div>
 
 			<div class="navigation">

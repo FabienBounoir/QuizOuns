@@ -207,7 +207,6 @@
 					background-clip: text;
 					-webkit-background-clip: text;
 					-webkit-text-fill-color: transparent;
-					margin-left: 0.5rem;
 				}
 
 				.wave {

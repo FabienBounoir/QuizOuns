@@ -9,6 +9,12 @@ class QuizService {
         this.collection = db.collection("quiz");
     }
 
+    /**
+     * Créer un nouveau quiz
+     * @param {Object} quizData - Les données du quiz
+     * @param {string} userId - L'ID de l'utilisateur créateur
+     * @returns {Promise<Object>} Le quiz créé
+     */
     async createQuiz(quizData, userId) {
         const quiz = {
             ...quizData,
@@ -21,6 +27,11 @@ class QuizService {
         return { ...quiz, _id: result.insertedId };
     }
 
+    /**
+     * Récupérer les quiz d'un utilisateur
+     * @param {string} userId - L'ID de l'utilisateur
+     * @returns {Promise<Array<Object>>} La liste des quiz
+     */
     async getUserQuizzes(userId) {
         return await this.collection
             .find({ createdBy: new ObjectId(userId) })
@@ -28,12 +39,21 @@ class QuizService {
             .toArray();
     }
 
+    /**
+     * Récupérer un quiz par son ID
+     * @param {string} quizId - L'ID du quiz
+     * @returns {Promise<Object|null>} Le quiz trouvé ou null
+     */
     async getQuizById(quizId) {
         return await this.collection.findOne({ _id: new ObjectId(quizId) });
     }
 
     /**
-     * Update a quiz with filtered data to prevent unwanted field updates
+     * Mettre à jour un quiz
+     * @param {string} quizId - L'ID du quiz
+     * @param {any} updateData - Les nouvelles données
+     * @param {string} userId - L'ID de l'utilisateur (pour vérifier les permissions)
+     * @returns {Promise<Object|null>} Le quiz mis à jour ou null
      */
     async updateQuiz(quizId, updateData, userId) {
         const filteredData = {
@@ -42,7 +62,7 @@ class QuizService {
             ...(updateData.questions && { questions: updateData.questions }),
             ...(updateData.category && { category: updateData.category }),
             ...(updateData.difficulty && { difficulty: updateData.difficulty }),
-            ...(updateData.isPublic !== undefined && { isPublic: updateData.isPublic })
+            ...(updateData.isPrivate !== undefined && { isPrivate: updateData.isPrivate })
         };
 
         const result = await this.collection.findOneAndUpdate(
@@ -59,6 +79,12 @@ class QuizService {
         return result?.value || null;
     }
 
+    /**
+     * Supprimer un quiz
+     * @param {string} quizId - L'ID du quiz
+     * @param {string} userId - L'ID de l'utilisateur (pour vérifier les permissions)
+     * @returns {Promise<boolean>} True si supprimé, false sinon
+     */
     async deleteQuiz(quizId, userId) {
         const result = await this.collection.deleteOne({
             _id: new ObjectId(quizId),
@@ -68,6 +94,10 @@ class QuizService {
         return result.deletedCount > 0;
     }
 
+    /**
+     * Récupérer tous les quiz publics
+     * @returns {Promise<Array<Object>>} La liste de tous les quiz
+     */
     async getAllPublicQuizzes() {
         return await this.collection
             .find({})

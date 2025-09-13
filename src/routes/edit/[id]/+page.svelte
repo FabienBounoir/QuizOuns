@@ -161,18 +161,6 @@
 						<input type="checkbox" bind:checked={quiz.isPrivate} />
 						Quiz privé (ne sera pas visible publiquement)
 					</label>
-					<p class="privacy-help">
-						{#if quiz.isPrivate}
-							Ce quiz sera uniquement accessible par lien direct et n'apparaîtra pas dans la liste
-							publique.
-							<br /><strong>Avantages :</strong> Contrôle total sur qui peut y accéder, idéal pour des
-							évaluations ou des quiz internes.
-						{:else}
-							Ce quiz sera visible dans la liste des quiz publics et accessible à tous.
-							<br /><strong>Avantages :</strong> Plus de visibilité, peut être découvert par d'autres
-							utilisateurs.
-						{/if}
-					</p>
 				</div>
 			</div>
 
@@ -227,10 +215,12 @@
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 30px;
+		gap: 20px;
 
 		h1 {
 			margin: 0;
 			color: var(--primary-900);
+			flex: 1;
 		}
 
 		.back-btn {
@@ -241,6 +231,8 @@
 			border-radius: 4px;
 			cursor: pointer;
 			font-size: 14px;
+			white-space: nowrap;
+			flex-shrink: 0;
 
 			&:hover {
 				background: var(--primary-200);
