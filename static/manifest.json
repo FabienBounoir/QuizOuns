@@ -1,0 +1,25 @@
+{
+    "name": "QuizOuns - Plateforme de Quiz Interactifs",
+    "short_name": "QuizOuns",
+    "description": "Créez, partagez et jouez aux meilleurs quiz en ligne",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#fb923c",
+    "orientation": "portrait-primary",
+    "categories": [
+        "education",
+        "games",
+        "entertainment"
+    ],
+    "lang": "fr",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "/favicon.png",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}

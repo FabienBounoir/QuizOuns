@@ -1,0 +1,20 @@
+# allow crawling everything by default
+User-agent: *
+Allow: /
+Allow: /public
+Allow: /quiz/*
+
+# Optimisation pour les moteurs de recherche
+Disallow: /admin
+Disallow: /edit/*
+Disallow: /new
+Disallow: /login
+Disallow: /register
+Disallow: /_api/*
+Disallow: /view/*
+
+# Sitemap
+Sitemap: https://quizouns.vercel.app/sitemap.xml
+
+# Crawl-delay pour éviter la surcharge
+Crawl-delay: 1
