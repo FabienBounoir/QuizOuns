@@ -62,8 +62,26 @@ export const GET = async ({ cookies, url }) => {
 			return json({ error: "Utilisateur non trouvé" }, { status: 401 });
 		}
 
-		const quizzes = await quizService.getUserQuizzes(user._id.toString());
-		return json({ quizzes });
+		const pageParam = url.searchParams.get('page');
+		const limitParam = url.searchParams.get('limit');
+		const searchParam = url.searchParams.get('search');
+
+		if (!pageParam && !limitParam && !searchParam) {
+			const quizzes = await quizService.getUserQuizzes(user._id.toString());
+			return json({ quizzes });
+		}
+
+		const page = pageParam ? parseInt(pageParam) : 1;
+		const limit = limitParam ? parseInt(limitParam) : 6;
+		const search = searchParam || '';
+
+		const result = await quizService.getUserQuizzes(user._id.toString(), {
+			page,
+			limit,
+			search
+		});
+
+		return json(result);
 	} catch (error) {
 		console.error("Erreur lors de la récupération des quiz:", error);
 		return json({ error: "Erreur serveur" }, { status: 500 });

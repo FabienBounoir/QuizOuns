@@ -28,15 +28,59 @@ class QuizService {
     }
 
     /**
-     * Récupérer les quiz d'un utilisateur
+     * Récupérer les quiz d'un utilisateur avec pagination et recherche
      * @param {string} userId - L'ID de l'utilisateur
-     * @returns {Promise<Array<Object>>} La liste des quiz
+     * @param {Object} [options] - Options de pagination et recherche
+     * @param {number} [options.page] - Numéro de page (défaut: 1)
+     * @param {number} [options.limit] - Nombre d'éléments par page (défaut: 6)
+     * @param {string} [options.search] - Terme de recherche (défaut: '')
+     * @returns {Promise<Object|Array>} Résultat avec quizzes, total, page, totalPages ou tableau simple
      */
-    async getUserQuizzes(userId) {
-        return await this.collection
-            .find({ createdBy: new ObjectId(userId) })
+    async getUserQuizzes(userId, options) {
+        const { page = 1, limit = 6, search = '' } = options || {};
+        const skip = (page - 1) * limit;
+
+        // Construire la requête de base
+        let query = { createdBy: new ObjectId(userId) };
+
+        // Ajouter la recherche si fournie
+        if (search.trim()) {
+            query = {
+                ...query,
+                $or: [
+                    { title: { $regex: search, $options: 'i' } },
+                    { description: { $regex: search, $options: 'i' } }
+                ]
+            };
+        }
+
+        // Si pas de pagination demandée (pour compatibilité avec l'ancien code)
+        if (!options) {
+            return await this.collection
+                .find(query)
+                .sort({ createdAt: -1 })
+                .toArray();
+        }
+
+        // Récupérer les quiz avec pagination
+        const quizzes = await this.collection
+            .find(query)
             .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
             .toArray();
+
+        // Compter le total
+        const total = await this.collection.countDocuments(query);
+        const totalPages = Math.ceil(total / limit);
+
+        return {
+            quizzes,
+            total,
+            page,
+            totalPages,
+            hasMore: page < totalPages
+        };
     }
 
     /**

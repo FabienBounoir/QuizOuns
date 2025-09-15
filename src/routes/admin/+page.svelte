@@ -7,18 +7,91 @@
 
 	let quizzes = [];
 	let loading = true;
+	let searchQuery = '';
+	let currentPage = 1;
+	let quizzesPerPage = 12;
+	let loadingMore = false;
+	let hasMore = true;
+	let lastElement;
+	let observer;
+	let totalQuizzes = 0;
 
 	onMount(async () => {
+		await loadInitialQuizzes();
+	});
+
+	const setupObserver = () => {
+		if (observer) observer.disconnect();
+
+		if (lastElement && hasMore) {
+			observer = new IntersectionObserver(
+				(entries) => {
+					if (entries[0].isIntersecting) {
+						loadMore();
+					}
+				},
+				{ threshold: 0.1 }
+			);
+			observer.observe(lastElement);
+		}
+	};
+
+	onMount(() => {
+		return () => {
+			if (observer) observer.disconnect();
+		};
+	});
+
+	async function loadInitialQuizzes() {
 		try {
-			const response = await api.get('/quiz');
+			const response = await api.get(`/quiz?page=1&limit=${quizzesPerPage}&search=${searchQuery}`);
 			quizzes = response.quizzes || [];
+			totalQuizzes = response.total || 0;
+			hasMore = quizzes.length === quizzesPerPage;
+			currentPage = 1;
+
+			setTimeout(setupObserver, 100);
 		} catch (error) {
 			console.error('Erreur lors du chargement des quiz:', error);
 			snacks.error('Erreur lors du chargement des quiz');
 		} finally {
 			loading = false;
 		}
-	});
+	}
+
+	function handleSearch() {
+		currentPage = 1;
+		loading = true;
+		loadInitialQuizzes();
+	}
+
+	async function loadMore() {
+		if (loadingMore || !hasMore) return;
+
+		loadingMore = true;
+		try {
+			const nextPage = currentPage + 1;
+			const response = await api.get(
+				`/quiz?page=${nextPage}&limit=${quizzesPerPage}&search=${searchQuery}`
+			);
+			const newQuizzes = response.quizzes || [];
+
+			if (newQuizzes.length > 0) {
+				quizzes = [...quizzes, ...newQuizzes];
+				currentPage = nextPage;
+				hasMore = newQuizzes.length === quizzesPerPage;
+			} else {
+				hasMore = false;
+			}
+		} catch (error) {
+			console.error('Erreur lors du chargement des quiz:', error);
+			snacks.error('Erreur lors du chargement des quiz');
+		} finally {
+			loadingMore = false;
+		}
+
+		setTimeout(setupObserver, 100);
+	}
 
 	function formatDate(dateString) {
 		return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -61,7 +134,14 @@
 
 		try {
 			await api.delete(`/quiz/${quizId}`);
+
 			quizzes = quizzes.filter((quiz) => quiz._id !== quizId);
+			totalQuizzes--;
+
+			if (quizzes.length < quizzesPerPage && hasMore) {
+				loadMore();
+			}
+
 			snacks.success('Quiz supprimé avec succès');
 		} catch (error) {
 			console.error('Erreur lors de la suppression du quiz:', error);
@@ -89,6 +169,25 @@
 			</div>
 		</div>
 	</header>
+
+	<!-- Barre de recherche -->
+	<div class="search-section">
+		<div class="search-bar">
+			<i class="fa-solid fa-search"></i>
+			<input
+				type="text"
+				placeholder="Rechercher un quiz..."
+				bind:value={searchQuery}
+				oninput={handleSearch}
+			/>
+		</div>
+		{#if searchQuery}
+			<p class="search-results">
+				{totalQuizzes} résultat{totalQuizzes > 1 ? 's' : ''} trouvé{totalQuizzes > 1 ? 's' : ''} pour
+				"{searchQuery}"
+			</p>
+		{/if}
+	</div>
 
 	{#if loading}
 		<div class="loading">Chargement...</div>
@@ -152,6 +251,26 @@
 				</div>
 			{/each}
 		</div>
+
+		<!-- Élément d'observation pour la pagination automatique -->
+		{#if hasMore && !loadingMore}
+			<div class="intersection-observer" bind:this={lastElement} style="height: 1px;"></div>
+		{/if}
+
+		<!-- Indicateur de chargement pour pagination -->
+		{#if loadingMore}
+			<div class="loading-more">
+				<i class="fa-solid fa-spinner fa-spin"></i>
+				Chargement...
+			</div>
+		{/if}
+
+		<!-- Indicateur fin de liste -->
+		{#if !hasMore && quizzes.length > 0}
+			<div class="end-of-list">
+				<p>Vous avez vu tous vos quiz</p>
+			</div>
+		{/if}
 	{/if}
 </div>
 
@@ -328,6 +447,74 @@
 
 		i {
 			font-size: 0.875rem;
+		}
+	}
+
+	.search-section {
+		margin-bottom: 30px;
+
+		.search-bar {
+			position: relative;
+			width: 100%;
+			max-width: none;
+
+			i.fa-search {
+				position: absolute;
+				left: 15px;
+				top: 50%;
+				transform: translateY(-50%);
+				color: var(--primary-400);
+				font-size: 16px;
+			}
+
+			input {
+				width: 100%;
+				padding: 12px 15px 12px 45px;
+				border: 2px solid var(--primary-200);
+				border-radius: 12px;
+				font-size: 16px;
+				background: white;
+				transition: all 0.3s ease;
+
+				&:focus {
+					outline: none;
+					border-color: var(--primary-500);
+					box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.1);
+				}
+
+				&::placeholder {
+					color: var(--primary-400);
+				}
+			}
+		}
+
+		.search-results {
+			text-align: center;
+			margin-top: 10px;
+			color: var(--primary-600);
+			font-size: 14px;
+		}
+	}
+
+	.loading-more {
+		text-align: center;
+		padding: 30px;
+		color: var(--primary-600);
+		font-size: 16px;
+
+		i {
+			margin-right: 8px;
+		}
+	}
+
+	.end-of-list {
+		text-align: center;
+		padding: 30px;
+		color: var(--primary-500);
+		font-style: italic;
+
+		p {
+			margin: 0;
 		}
 	}
 
